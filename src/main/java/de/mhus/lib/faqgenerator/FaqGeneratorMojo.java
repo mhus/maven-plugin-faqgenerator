@@ -67,6 +67,8 @@ public class FaqGeneratorMojo extends AbstractMojo {
             createSimpleConfiguration(config);
         }
         
+        System.out.println("Configuration: " + config);
+        
         // execute
         
         for (Configuration c : config) {
@@ -190,7 +192,7 @@ public class FaqGeneratorMojo extends AbstractMojo {
     private Properties readFile(File f, Job job, Properties context) throws IOException {
         Properties out = new Properties();
         out.putAll(context);
-        out.put("name", f.getName());
+        out.put("name", MFile.getFileNameOnly(f.getName()));
         
         List<String> lines = MFile.readLines(f, true);
         
@@ -239,12 +241,12 @@ public class FaqGeneratorMojo extends AbstractMojo {
             Document doc = MXml.loadXml(f);
             for (Element eConfig : MXml.getLocalElementIterator(doc.getDocumentElement(), "configuration")) {
                 Configuration c = new Configuration();
-                c.enabled = MCast.toboolean(eConfig.getAttribute("enabled"), true);
-                c.ignoreFails = MCast.toboolean(eConfig.getAttribute("ignoreFails"), ignoreFails);
-                c.sources = MCast.toString(eConfig.getAttribute("sources"), sources);
-                c.template = MCast.toString(eConfig.getAttribute("template"), template);
-                c.output = MCast.toString(eConfig.getAttribute("output"), output);
-                c.filterGroups = MCast.toString(eConfig.getAttribute("filterGroups"), filterGroups);
+                c.enabled = MCast.toboolean(MXml.getValue(eConfig, "enabled", ""), true);
+                c.ignoreFails = MCast.toboolean(MXml.getValue(eConfig, "ignoreFails", ""), ignoreFails);
+                c.sources = MCast.toString(MXml.getValue(eConfig, "sources", ""), sources);
+                c.template = MCast.toString(MXml.getValue(eConfig, "template", ""), template);
+                c.output = MCast.toString(MXml.getValue(eConfig, "output", ""), output);
+                c.filterGroups = MCast.toString(MXml.getValue(eConfig, "filterGroups", ""), filterGroups);
                 
                 config.add(c);
             }

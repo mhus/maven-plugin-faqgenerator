@@ -9,4 +9,9 @@ public class Configuration {
     public String filterGroups;
     public boolean ignoreFails;
 
+    
+    @Override
+    public String toString() {
+        return sources + " -> " + output;
+    }
 }

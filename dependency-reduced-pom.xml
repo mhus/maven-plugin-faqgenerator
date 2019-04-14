@@ -7,6 +7,7 @@
     <relativePath>../pom.xml/pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
+  <groupId>de.mhus.mvn.plugin</groupId>
   <artifactId>faqgenerator-maven-plugin</artifactId>
   <packaging>maven-plugin</packaging>
   <name>FAQGenerator</name>
