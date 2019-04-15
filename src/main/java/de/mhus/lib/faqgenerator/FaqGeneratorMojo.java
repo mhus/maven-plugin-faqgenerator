@@ -68,7 +68,7 @@ public class FaqGeneratorMojo extends AbstractMojo {
         
         LinkedList<Configuration> config = new LinkedList<>();
         if (MString.isSet(configurationFile)) {
-            File f = new File(configurationFile);
+            File f = new File(toDirectory(configurationFile));
             if (!f.exists())
                 throw new MojoExecutionException("Configuration file not found: " + f.getAbsolutePath());
             readConfigurationFile(f, config);
@@ -228,7 +228,7 @@ public class FaqGeneratorMojo extends AbstractMojo {
             public Object execute(FunctionRequest functionRequest) {
                 return md.markdown(String.valueOf(functionRequest.getArguments().get(0)));
             }
-        };;
+        };
         
         EnvironmentConfiguration jtwigConfig = EnvironmentConfigurationBuilder
                 .configuration()
@@ -330,9 +330,9 @@ public class FaqGeneratorMojo extends AbstractMojo {
         Configuration c = new Configuration();
         c.enabled = true;
         c.ignoreFails = ignoreFails;
-        c.sources = sources;
-        c.template = template;
-        c.output = output;
+        c.sources = toDirectory( sources );
+        c.template = toDirectory( template );
+        c.output = toDirectory( output );
         c.filterGroups = filterGroups;
         c.parameters = new Properties();
         if (parameters != null)
@@ -348,9 +348,9 @@ public class FaqGeneratorMojo extends AbstractMojo {
                 Configuration c = new Configuration();
                 c.enabled = MCast.toboolean(MXml.getValue(eConfig, "enabled", ""), true);
                 c.ignoreFails = MCast.toboolean(MXml.getValue(eConfig, "ignoreFails", ""), ignoreFails);
-                c.sources = MCast.toString(MXml.getValue(eConfig, "sources", ""), sources);
-                c.template = MCast.toString(MXml.getValue(eConfig, "template", ""), template);
-                c.output = MCast.toString(MXml.getValue(eConfig, "output", ""), output);
+                c.sources = toDirectory( MCast.toString(MXml.getValue(eConfig, "sources", ""), sources) );
+                c.template = toDirectory( MCast.toString(MXml.getValue(eConfig, "template", ""), template) );
+                c.output = toDirectory( MCast.toString(MXml.getValue(eConfig, "output", ""), output) );
                 c.filterGroups = MCast.toString(MXml.getValue(eConfig, "filterGroups", ""), filterGroups);
                 // read parameters
                 c.parameters = new Properties();
@@ -368,6 +368,13 @@ public class FaqGeneratorMojo extends AbstractMojo {
         } catch (Exception e) {
             throw new MojoExecutionException(f.getAbsolutePath(), e);
         }
+    }
+
+    private String toDirectory(String in) {
+        if (MString.isEmpty(in)) return in;
+        in = in.replace("${base}", project.getBasedir().getAbsolutePath() );
+        in = in.replace("${build}", project.getBuild().getDirectory() );
+        return in;
     }
 
 }
