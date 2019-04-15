@@ -1,5 +1,7 @@
 package de.mhus.lib.faqgenerator;
 
+import java.util.Properties;
+
 public class Configuration {
 
     public boolean enabled;
@@ -8,6 +10,7 @@ public class Configuration {
     public String output;
     public String filterGroups;
     public boolean ignoreFails;
+    public Properties parameters;
 
     
     @Override

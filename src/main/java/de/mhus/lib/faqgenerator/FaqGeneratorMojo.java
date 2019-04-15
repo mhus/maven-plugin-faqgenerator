@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import org.apache.maven.plugin.AbstractMojo;
@@ -50,7 +51,10 @@ public class FaqGeneratorMojo extends AbstractMojo {
     
     @Parameter(defaultValue="false")
     protected boolean ignoreFails = false;
-    
+
+    @Parameter(defaultValue="")
+    protected Map<String,String> parameters = null;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         
@@ -98,8 +102,40 @@ public class FaqGeneratorMojo extends AbstractMojo {
         // filter groups
         filterGroups(job);
         
+        // sort findings
+        sortFiles(job.files);
+        sortTopics(job.topics);
+        
         // write template
         createTemplate(job);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void sortTopics(LinkedList<Properties> topics) {
+        topics.sort((a,b) -> {
+            String aOrder = a.getProperty("order");
+            if (aOrder == null) aOrder = a.getProperty("name");
+            
+            String bOrder = b.getProperty("order");
+            if (bOrder == null) bOrder = b.getProperty("name");
+            
+            return aOrder.compareTo(bOrder);
+          });
+        
+        topics.forEach(t -> sortFiles( (LinkedList<Properties>)t.get("_files") ) );
+    }
+
+    private void sortFiles(LinkedList<Properties> files) {
+        if (files == null) return;
+        files.sort((a,b) -> {
+            String aOrder = a.getProperty("order");
+            if (aOrder == null) aOrder = a.getProperty("name");
+            
+            String bOrder = b.getProperty("order");
+            if (bOrder == null) bOrder = b.getProperty("name");
+            
+            return aOrder.compareTo(bOrder);
+          });
     }
 
     private void filterGroups(Job job) {
@@ -149,6 +185,8 @@ public class FaqGeneratorMojo extends AbstractMojo {
         JtwigTemplate jtwigTemplate = JtwigTemplate.fileTemplate(templateFile);
         HashMap<String, Object> parameters = new HashMap<>();
         parameters.put("files", job.files);
+        parameters.put("topics", job.topics);
+        parameters.put("parameters", job.config.parameters);
         JtwigModel jtwigModel = JtwigModel.newModel(parameters);
         
         FileOutputStream fos = new FileOutputStream(new File(job.config.output));
@@ -170,16 +208,21 @@ public class FaqGeneratorMojo extends AbstractMojo {
         if (f.isFile()) {
             if (f.getName().endsWith(".txt")) {
                 Properties fileContext = readFile(f, job, context);
-                job.files.add(fileContext);
+                job.addFile(fileContext);
             }
         } else
         if (f.isDirectory()) {
-            Properties newContext = context;
+            Properties newContext = null;
             File x = new File(f,"_info.txt");
             if (x.exists() && x.isFile()) {
                 newContext = readFile(x, job, context);
-                newContext.put("topic", f.getName());
+            } else {
+                newContext = new Properties();
+                newContext.putAll(context);
             }
+            newContext.put("topicName", f.getName());
+            job.addTopic(newContext);
+            
             for (File n : f.listFiles()) {
                 if (!n.getName().startsWith(".") && !n.getName().startsWith("_"))
                     readSources(n, job, context);
@@ -231,7 +274,9 @@ public class FaqGeneratorMojo extends AbstractMojo {
         c.template = template;
         c.output = output;
         c.filterGroups = filterGroups;
-        
+        c.parameters = new Properties();
+        if (parameters != null)
+            c.parameters.putAll(parameters);
         config.add(c);
     }
 
@@ -247,7 +292,17 @@ public class FaqGeneratorMojo extends AbstractMojo {
                 c.template = MCast.toString(MXml.getValue(eConfig, "template", ""), template);
                 c.output = MCast.toString(MXml.getValue(eConfig, "output", ""), output);
                 c.filterGroups = MCast.toString(MXml.getValue(eConfig, "filterGroups", ""), filterGroups);
-                
+                // read parameters
+                c.parameters = new Properties();
+                if (parameters != null)
+                    c.parameters.putAll(parameters);
+                Element eParameters = MXml.getElementByPath(eConfig, "parameters");
+                if (eParameters != null) {
+                    for (Element eParam : MXml.getLocalElementIterator(eParameters)) {
+                        c.parameters.put(eParam.getNodeName(), MXml.getValue(eParam, false));
+                    }
+                }
+
                 config.add(c);
             }
         } catch (Exception e) {
