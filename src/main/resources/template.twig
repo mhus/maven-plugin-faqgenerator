@@ -1,7 +1,22 @@
-{% for file in files %}
-<a name="{{ file.name }}">
-<h2>{{ file.title }}</h2>
-<p>
-{{ file.text }}
-</p>
-{% endfor %}
+{% autoescape 'html' -%}
+    <div class="topics">
+        {% for topic in topics -%}
+            <div class="topicBlock">
+                <h2>{{ topic.topicTitle }}</h2>
+                <ul class="topicItemList">
+                {% for file in topic._files -%}
+                    <li><a href="#{{ file.name }}">{{ file.title }}</li>
+                {% endfor %}</ul>
+            </div>
+        {%- endfor %}
+    </div>
+    <div class="content">
+        {% for file in files -%}
+            <div class="article">
+                <a name="{{ file.name }}">
+                <h2>{{ file.title }}</h2>
+                {{ markdown( file.text ) | escape(false) }}
+            </div>
+        {%- endfor %}
+    </div>
+{%- endautoescape -%}

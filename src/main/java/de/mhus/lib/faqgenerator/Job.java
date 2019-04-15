@@ -13,9 +13,12 @@ public class Job {
         this.config = config;
     }
 
-    public void addTopic(Properties context) {
+    public void addTopic(Properties context, String name) {
         topics.add(context);
         context.put("_files", new LinkedList<>());
+        context.put("topicName", name);
+        if (!context.containsKey("topicTitle"))
+            context.put("topicTitle", name);
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
