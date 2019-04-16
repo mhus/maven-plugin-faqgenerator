@@ -4,7 +4,7 @@
             <div class="topicBlock">
                 <h2>{{ topic.topicTitle }}</h2>
                 <ul class="topicItemList">
-                {% for file in topic._files -%}
+                {% for file in topic.topicFiles -%}
                     <li><a href="#{{ file.name }}">{{ file.title }}</li>
                 {% endfor %}</ul>
             </div>

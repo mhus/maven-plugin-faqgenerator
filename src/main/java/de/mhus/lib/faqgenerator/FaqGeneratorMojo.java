@@ -128,7 +128,7 @@ public class FaqGeneratorMojo extends AbstractMojo {
     private void cleanupTopic(Job job) {
         // cleanup removed files from filter
         for (Properties topic : job.topics) {
-            LinkedList<Properties> files = (LinkedList<Properties>)topic.get("_files");
+            LinkedList<Properties> files = (LinkedList<Properties>)topic.get("topicFiles");
             files.removeIf(i -> {
                 return !job.files.contains(i); // remove if no more exists in files list
             });
@@ -136,7 +136,7 @@ public class FaqGeneratorMojo extends AbstractMojo {
         
         // cleanup empty topics
         job.topics.removeIf(i -> {
-            LinkedList<Properties> files = (LinkedList<Properties>)i.get("_files");
+            LinkedList<Properties> files = (LinkedList<Properties>)i.get("topicFiles");
             return files.isEmpty();
         });
         
@@ -156,7 +156,7 @@ public class FaqGeneratorMojo extends AbstractMojo {
             return aOrder.compareTo(bOrder);
           });
         
-        topics.forEach(t -> sortFiles( (LinkedList<Properties>)t.get("_files") ) );
+        topics.forEach(t -> sortFiles( (LinkedList<Properties>)t.get("topicFiles") ) );
     }
 
     private void sortFiles(LinkedList<Properties> files) {
@@ -270,6 +270,8 @@ public class FaqGeneratorMojo extends AbstractMojo {
             File x = new File(f,"_info.txt");
             if (x.exists() && x.isFile()) {
                 newContext = readFile(x, job, context);
+                newContext.setProperty("topicText", newContext.getProperty("text",""));
+                newContext.remove("text");
             } else {
                 newContext = new Properties();
                 newContext.putAll(context);
@@ -289,16 +291,19 @@ public class FaqGeneratorMojo extends AbstractMojo {
         Properties out = new Properties();
         out.putAll(context);
         out.put("name", MFile.getFileNameOnly(f.getName()));
-        out.remove("_files");
+        out.remove("topicFiles");
+        out.remove("topicText");
         
         List<String> lines = MFile.readLines(f, true);
         
         Iterator<String> iter = lines.iterator();
         while (iter.hasNext()) {
             String line = iter.next();
-            if (line.trim().length() == 0) break;
+            if (line.trim().length() == 0) break; // empty line - end of header
+            if (line.startsWith("#")) continue; // comments
             
             int pos = line.indexOf(':');
+            if (pos < 0) continue; // invalid entry
             String key = line.substring(0, pos).trim();
             String value = line.substring(pos+1);
             while (value.endsWith("\\")) {
