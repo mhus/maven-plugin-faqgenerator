@@ -129,9 +129,10 @@ public class FaqGeneratorMojo extends AbstractMojo {
         // cleanup removed files from filter
         for (Properties topic : job.topics) {
             LinkedList<Properties> files = (LinkedList<Properties>)topic.get("topicFiles");
-            files.removeIf(i -> {
-                return !job.files.contains(i); // remove if no more exists in files list
-            });
+            if (files != null)
+	            files.removeIf(i -> {
+	                return !job.files.contains(i); // remove if no more exists in files list
+	            });
         }
         
         // cleanup empty topics
