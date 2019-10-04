@@ -43,12 +43,15 @@ public class FaqGeneratorMojo extends AbstractMojo {
     @Parameter
     protected String output;
 
+    @Parameter(defaultValue="true")
+    protected boolean singleFile = true;
+    
     @Parameter(defaultValue="")
     protected String filterGroups;
     
     @Parameter(defaultValue="")
     protected String template = null;
-
+    
     @Parameter(defaultValue="${project}/faq")
     protected String sources = null;
     
@@ -230,11 +233,23 @@ public class FaqGeneratorMojo extends AbstractMojo {
                 return md.markdown(String.valueOf(functionRequest.getArguments().get(0)));
             }
         };
+        JtwigFunction jsonFunction = new SimpleJtwigFunction() {
+            @Override
+            public String name() {
+                return "json";
+            }
+
+            @Override
+            public Object execute(FunctionRequest functionRequest) {
+                return quoteJson(String.valueOf(functionRequest.getArguments().get(0)));
+            }
+        };
         
         EnvironmentConfiguration jtwigConfig = EnvironmentConfigurationBuilder
                 .configuration()
                 .functions()
                     .add(markdownFunction)
+                    .add(jsonFunction)
                 .and()
             .build();
         JtwigTemplate jtwigTemplate = JtwigTemplate.fileTemplate(templateFile, jtwigConfig);
@@ -242,12 +257,24 @@ public class FaqGeneratorMojo extends AbstractMojo {
         parameters.put("files", job.files);
         parameters.put("topics", job.topics);
         parameters.put("parameters", job.config.parameters);
-        JtwigModel jtwigModel = JtwigModel.newModel(parameters);
 
-        FileOutputStream fos = new FileOutputStream(new File(job.config.output));
-        jtwigTemplate.render(jtwigModel, fos);
-        fos.close();
+        if (job.config.singleFile) {
+            JtwigModel jtwigModel = JtwigModel.newModel(parameters);
+            FileOutputStream fos = new FileOutputStream(new File(job.config.output));
+            jtwigTemplate.render(jtwigModel, fos);
+            fos.close();
+        } else {
+            for (Properties file : job.files) {
+                String outName = job.config.output;
+                outName = outName.replace("${name}", file.getProperty("name"));
+                parameters.put("file", file);
 
+                JtwigModel jtwigModel = JtwigModel.newModel(parameters);
+                FileOutputStream fos = new FileOutputStream(new File(outName));
+                jtwigTemplate.render(jtwigModel, fos);
+                fos.close();
+            }
+        }
     }
 
     private void readSources(Job job) throws MojoExecutionException, IOException {
@@ -339,6 +366,7 @@ public class FaqGeneratorMojo extends AbstractMojo {
         c.sources = toDirectory( sources );
         c.template = toDirectory( template );
         c.output = toDirectory( output );
+        c.singleFile = singleFile;
         c.filterGroups = filterGroups;
         c.parameters = new Properties();
         if (parameters != null)
@@ -357,6 +385,7 @@ public class FaqGeneratorMojo extends AbstractMojo {
                 c.sources = toDirectory( MCast.toString(MXml.getValue(eConfig, "sources", ""), sources) );
                 c.template = toDirectory( MCast.toString(MXml.getValue(eConfig, "template", ""), template) );
                 c.output = toDirectory( MCast.toString(MXml.getValue(eConfig, "output", ""), output) );
+                c.singleFile = MCast.toboolean( MXml.getValue(eConfig, "singleFile", ""), true);
                 c.filterGroups = MCast.toString(MXml.getValue(eConfig, "filterGroups", ""), filterGroups);
                 // read parameters
                 c.parameters = new Properties();
@@ -383,4 +412,57 @@ public class FaqGeneratorMojo extends AbstractMojo {
         return in;
     }
 
+    public static String quoteJson(String string) {
+        if (string == null || string.length() == 0) {
+            return "\"\"";
+        }
+
+        char         c = 0;
+        int          i;
+        int          len = string.length();
+        StringBuilder sb = new StringBuilder(len + 4);
+        String       t;
+
+        sb.append('"');
+        for (i = 0; i < len; i += 1) {
+            c = string.charAt(i);
+            switch (c) {
+            case '\\':
+            case '"':
+                sb.append('\\');
+                sb.append(c);
+                break;
+            case '/':
+//                if (b == '<') {
+                    sb.append('\\');
+//                }
+                sb.append(c);
+                break;
+            case '\b':
+                sb.append("\\b");
+                break;
+            case '\t':
+                sb.append("\\t");
+                break;
+            case '\n':
+                sb.append("\\n");
+                break;
+            case '\f':
+                sb.append("\\f");
+                break;
+            case '\r':
+               sb.append("\\r");
+               break;
+            default:
+                if (c < ' ') {
+                    t = "000" + Integer.toHexString(c);
+                    sb.append("\\u" + t.substring(t.length() - 4));
+                } else {
+                    sb.append(c);
+                }
+            }
+        }
+        sb.append('"');
+        return sb.toString();
+    }    
 }

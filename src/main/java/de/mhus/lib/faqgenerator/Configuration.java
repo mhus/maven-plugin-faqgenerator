@@ -8,6 +8,7 @@ public class Configuration {
     public String sources;
     public String template;
     public String output;
+    public boolean singleFile = true;
     public String filterGroups;
     public boolean ignoreFails;
     public Properties parameters;

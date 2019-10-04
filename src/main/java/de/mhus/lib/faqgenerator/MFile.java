@@ -681,12 +681,12 @@ public class MFile {
 	public static String normalizePath(String name) {
 		if (name == null) return null;
 		
-		if (name.indexOf('\\') >= 0) name = name.replaceAll("\\\\", "/");
-		if (name.indexOf('*') >= 0) name = name.replaceAll("\\*", "_");
-		if (name.indexOf('?') >= 0) name = name.replaceAll("\\?", "_");
-		if (name.indexOf(':') >= 0) name = name.replaceAll(":", "_");
-		if (name.indexOf(' ') >= 0) name = name.replaceAll(" ", "_");
-		if (name.indexOf("..") >= 0) name = name.replaceAll("..", "_");
+		if (name.indexOf('\\') >= 0) name = name.replace("\\\\", "/");
+		if (name.indexOf('*') >= 0) name = name.replace("\\*", "_");
+		if (name.indexOf('?') >= 0) name = name.replace("\\?", "_");
+		if (name.indexOf(':') >= 0) name = name.replace(":", "_");
+		if (name.indexOf(' ') >= 0) name = name.replace(" ", "_");
+		if (name.indexOf("..") >= 0) name = name.replace("..", "_");
 		if (name.indexOf('~') >= 0) name = name.replace('~', '_');
 
 		return name;
