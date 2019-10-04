@@ -288,7 +288,7 @@ public class FaqGeneratorMojo extends AbstractMojo {
     private void readSources(File f, Job job, Properties context) throws IOException {
         
         if (f.isFile()) {
-            if (f.getName().endsWith(".txt")) {
+            if (f.getName().endsWith(".txt") || f.getName().endsWith(".md")) {
                 Properties fileContext = readFile(f, job, context);
                 job.addFile(fileContext);
             }
